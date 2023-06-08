@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        .student-card {
+            width: 400px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .scroll-buttons {
+            margin-top: 20px;
+        }
+
+        .add-student-form,
+        .delete-student-form,
+        .edit-student-form,
+        .edit-details-form,
+        .filter-student-form {
+            display: none;
+            width: 400px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="student-card">
+            <h2 id="studentId"></h2>
+            <p id="firstName"></p>
+            <p id="lastName"></p>
+            <p id="major"></p>
+            <p id="gpa"></p>
+        </div>
+        <div class="scroll-buttons">
+            <button id="prevBtn" disabled>&lt; Prev</button>
+            <button id="nextBtn">Next &gt;</button>
+        </div>
+        <button id="addStudentBtn">Add Student</button>
+        <button id="deleteStudentBtn">Delete Student</button>
+        <button id="editStudentBtn">Edit Student</button>
+        <button id="filterStudentBtn">Filter Student</button>
+        <button id="sortByGpaBtn">Sort by GPA</button>
+        <div class="add-student-form">
+            <h3>Add Student</h3>
+            <input type="text" id="firstNameInput" placeholder="First Name" required>
+            <br><br>
+            <input type="text" id="lastNameInput" placeholder="Last Name" required>
+            <br><br>
+            <input type="text" id="majorInput" placeholder="Major (e.g., A123)" required>
+            <br><br>
+            <input type="number" id="gpaInput" placeholder="GPA (0-4)" min="0" max="4" step="0.1" required>
+            <br><br>
+            <button id="addBtn">Add</button>
+        </div>
+        <div class="delete-student-form">
+            <h3>Delete Student</h3>
+            <input type="number" id="deleteStudentIdInput" placeholder="Student ID" required>
+            <br><br>
+            <button id="deleteBtn">Delete</button>
+        </div>
+        <div class="edit-student-form">
+            <h3>Edit Student</h3>
+            <input type="number" id="editStudentIdInput" placeholder="Student ID" required>
+            <br><br>
+            <button id="editDetailsBtn">Edit Details</button>
+        </div>
+        <div class="edit-details-form">
+            <h3>Edit Student Details</h3>
+            <input type="text" id="editFirstNameInput" placeholder="First Name" required>
+            <br><br>
+            <input type="text" id="editLastNameInput" placeholder="Last Name" required>
+            <br><br>
+            <input type="text" id="editMajorInput" placeholder="Major (e.g., A123)" required>
+            <br><br>
+            <input type="number" id="editGpaInput" placeholder="GPA (0-4)" min="0" max="4" step="0.1" required>
+            <br><br>
+            <button id="okBtn">OK</button>
+        </div>
+        <div class="filter-student-form">
+            <h3>Filter Students</h3>
+            <input type="text" id="filterMajorInput" placeholder="Filter by Major">
+            <br><br>
+            <input type="text" id="filterLastNameInput" placeholder="Filter by Last Name">
+            <br><br>
+            <input type="text" id="filterGpaInput" placeholder="Filter by GPA (e.g., >2 or <0)">
+            <br><br>
+            <button id="filterBtn">Filter</button>
+        </div>
+    </div>
+
+    <script>
+        class Student {
+            constructor(studentId, firstName, lastName, major, gpa) {
+                this.studentId = studentId;
+                this.firstName = firstName;
+                this.lastName = lastName;
+                this.major = major;
+                this.gpa = gpa;
+            }
+        }
+
+        const students = [
+            new Student(12345678, "Malkit", "Saini", "A123", 3.2),
+            new Student(87654321, "Virti", "Saini", "B987", 3.8),
+            new Student(45678901, "Harpreet", "Saini", "C456", 3.5),
+            new Student(98765432, "Sukhpal", "Saini", "D321", 3.9),
+            new Student(34567890, "Ravi", "Saini", "E654", 3.7),
+        ];
+
+        let currentIndex = 0;
+        const studentIdElement = document.getElementById("studentId");
+        const firstNameElement = document.getElementById("firstName");
+        const lastNameElement = document.getElementById("lastName");
+        const majorElement = document.getElementById("major");
+        const gpaElement = document.getElementById("gpa");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const addStudentBtn = document.getElementById("addStudentBtn");
+        const deleteStudentBtn = document.getElementById("deleteStudentBtn");
+        const editStudentBtn = document.getElementById("editStudentBtn");
+        const filterStudentBtn = document.getElementById("filterStudentBtn");
+        const addStudentForm = document.querySelector(".add-student-form");
+        const deleteStudentForm = document.querySelector(".delete-student-form");
+        const editStudentForm = document.querySelector(".edit-student-form");
+        const editDetailsForm = document.querySelector(".edit-details-form");
+        const filterStudentForm = document.querySelector(".filter-student-form");
+        const addBtn = document.getElementById("addBtn");
+        const deleteBtn = document.getElementById("deleteBtn");
+        const editDetailsBtn = document.getElementById("editDetailsBtn");
+        const okBtn = document.getElementById("okBtn");
+        const filterBtn = document.getElementById("filterBtn");
+
+        function generateUniqueStudentId() {
+            let newId;
+            do {
+                newId = Math.floor(10000000 + Math.random() * 90000000);
+            } while (students.some((student) => student.studentId === newId));
+            return newId;
+        }
+
+        function updateStudentCard() {
+            const student = students[currentIndex];
+            studentIdElement.textContent = "ID: " + student.studentId;
+            firstNameElement.textContent = "First Name: " + student.firstName;
+            lastNameElement.textContent = "Last Name: " + student.lastName;
+            majorElement.textContent = "Major: " + student.major;
+            gpaElement.textContent = "GPA: " + student.gpa.toFixed(2);
+
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex === students.length - 1;
+        }
+
+        prevBtn.addEventListener("click", () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateStudentCard();
+            }
+        });
+
+        nextBtn.addEventListener("click", () => {
+            if (currentIndex < students.length - 1) {
+                currentIndex++;
+                updateStudentCard();
+            }
+        });
+
+        addStudentBtn.addEventListener("click", () => {
+            addStudentForm.style.display = "block";
+        });
+
+        deleteStudentBtn.addEventListener("click", () => {
+            deleteStudentForm.style.display = "block";
+        });
+
+        editStudentBtn.addEventListener("click", () => {
+            editStudentForm.style.display = "block";
+        });
+
+        filterStudentBtn.addEventListener("click", () => {
+            filterStudentForm.style.display = "block";
+        });
+
+        editDetailsBtn.addEventListener("click", () => {
+            const editStudentIdInput = document.getElementById("editStudentIdInput");
+            const studentId = parseInt(editStudentIdInput.value);
+
+            const studentIndex = students.findIndex((student) => student.studentId === studentId);
+
+            if (studentIndex !== -1) {
+                editStudentForm.style.display = "none";
+                editDetailsForm.style.display = "block";
+
+                const editFirstNameInput = document.getElementById("editFirstNameInput");
+                const editLastNameInput = document.getElementById("editLastNameInput");
+                const editMajorInput = document.getElementById("editMajorInput");
+                const editGpaInput = document.getElementById("editGpaInput");
+
+                editFirstNameInput.value = students[studentIndex].firstName;
+                editLastNameInput.value = students[studentIndex].lastName;
+                editMajorInput.value = students[studentIndex].major;
+                editGpaInput.value = students[studentIndex].gpa;
+            } else {
+                alert("The entered ID does not match any student.");
+            }
+        });
+
+        okBtn.addEventListener("click", () => {
+            const editFirstNameInput = document.getElementById("editFirstNameInput");
+            const editLastNameInput = document.getElementById("editLastNameInput");
+            const editMajorInput = document.getElementById("editMajorInput");
+            const editGpaInput = document.getElementById("editGpaInput");
+
+            students[currentIndex].firstName = editFirstNameInput.value;
+            students[currentIndex].lastName = editLastNameInput.value;
+            students[currentIndex].major = editMajorInput.value;
+            students[currentIndex].gpa = parseFloat(editGpaInput.value);
+
+            editDetailsForm.style.display = "none";
+            updateStudentCard();
+        });
+
+        addBtn.addEventListener("click", () => {
+            const firstNameInput = document.getElementById("firstNameInput");
+            const lastNameInput = document.getElementById("lastNameInput");
+            const majorInput = document.getElementById("majorInput");
+            const gpaInput = document.getElementById("gpaInput");
+
+            const firstName = firstNameInput.value;
+            const lastName = lastNameInput.value;
+            const major = majorInput.value;
+            const gpa = parseFloat(gpaInput.value);
+            const studentId = generateUniqueStudentId();
+
+            const newStudent = new Student(studentId, firstName, lastName, major, gpa);
+            students.push(newStudent);
+
+            firstNameInput.value = "";
+            lastNameInput.value = "";
+            majorInput.value = "";
+            gpaInput.value = "";
+
+            addStudentForm.style.display = "none";
+            currentIndex = students.length - 1;
+            updateStudentCard();
+        });
+
+        deleteBtn.addEventListener("click", () => {
+            const deleteStudentIdInput = document.getElementById("deleteStudentIdInput");
+            const studentId = parseInt(deleteStudentIdInput.value);
+
+            const studentIndex = students.findIndex((student) => student.studentId === studentId);
+
+            if (studentIndex !== -1) {
+                students.splice(studentIndex, 1);
+                deleteStudentForm.style.display = "none";
+
+                if (currentIndex >= students.length) {
+                    currentIndex = students.length - 1;
+                }
+
+                updateStudentCard();
+            } else {
+                alert("The entered ID does not match any student.");
+            }
+        });
+
+        filterBtn.addEventListener("click", () => {
+            const filterMajorInput = document.getElementById("filterMajorInput");
+            const filterLastNameInput = document.getElementById("filterLastNameInput");
+            const filterGpaInput = document.getElementById("filterGpaInput");
+
+            const filterMajor = filterMajorInput.value;
+            const filterLastName = filterLastNameInput.value;
+            const filterGpa = filterGpaInput.value;
+
+            let filteredStudents = students;
+
+            if (filterMajor) {
+                filteredStudents = filteredStudents.filter(
+                    (student) => student.major === filterMajor
+                );
+            }
+
+            if (filterLastName) {
+                filteredStudents = filteredStudents.filter(
+                    (student) => student.lastName === filterLastName
+                );
+            }
+
+            if (filterGpa) {
+                if (filterGpa.includes(">")) {
+                    const gpaValue = parseFloat(filterGpa.substring(1));
+                    filteredStudents = filteredStudents.filter((student) => student.gpa > gpaValue);
+                } else if (filterGpa.includes("<")) {
+                    const gpaValue = parseFloat(filterGpa.substring(1));
+                    filteredStudents = filteredStudents.filter((student) => student.gpa < gpaValue);
+                }
+            }
+
+            if (filteredStudents.length > 0) {
+                currentIndex = 0;
+                students.length = 0;
+                Array.prototype.push.apply(students, filteredStudents);
+                updateStudentCard();
+            } else {
+                alert("No students found matching the provided filters.");
+            }
+
+            filterMajorInput.value = "";
+            filterLastNameInput.value = "";
+            filterGpaInput.value = "";
+
+            filterStudentForm.style.display = "none";
+        });
+
+        const sortByGpaBtn = document.getElementById("sortByGpaBtn");
+
+            sortByGpaBtn.addEventListener("click", () => {
+                const sortedStudents = students.slice().sort((a, b) => b.gpa - a.gpa);
+
+                const studentList = sortedStudents.map((student) => {
+                    return `${student.firstName} ${student.lastName} - GPA: ${student.gpa.toFixed(2)}`;
+                });
+
+                const studentListString = studentList.join("\n");
+                alert("Students Sorted by GPA:\n\n" + studentListString);
+            });
+
+        
+         
+
+        updateStudentCard();
+    </script>
+</body>
+
+</html> 
+
